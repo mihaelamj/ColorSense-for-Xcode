@@ -300,7 +300,10 @@
 	[_rgbaUIColorRegex enumerateMatchesInString:text options:0 range:NSMakeRange(0, text.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
 		NSRange colorRange = [result range];
 		if (selectedRange.location >= colorRange.location && NSMaxRange(selectedRange) <= NSMaxRange(colorRange)) {
+            
 			NSString *typeIndicator = [text substringWithRange:[result rangeAtIndex:1]];
+            
+            
 			if ([typeIndicator rangeOfString:@"init"].location != NSNotFound) {
 				foundColorType = OMColorTypeUIRGBAInit;
 			} else {
@@ -331,6 +334,7 @@
 		[_whiteUIColorRegex enumerateMatchesInString:text options:0 range:NSMakeRange(0, text.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
 			NSRange colorRange = [result range];
 			if (selectedRange.location >= colorRange.location && NSMaxRange(selectedRange) <= NSMaxRange(colorRange)) {
+                
 				NSString *typeIndicator = [text substringWithRange:[result rangeAtIndex:1]];
 				if ([typeIndicator rangeOfString:@"init"].location != NSNotFound) {
 					foundColorType = OMColorTypeUIWhiteInit;
@@ -372,12 +376,15 @@
 		[_rgbaNSColorRegex enumerateMatchesInString:text options:0 range:NSMakeRange(0, text.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
 			NSRange colorRange = [result range];
 			if (selectedRange.location >= colorRange.location && NSMaxRange(selectedRange) <= NSMaxRange(colorRange)) {
+                
 				NSString *deviceOrCalibrated = [text substringWithRange:[result rangeAtIndex:1]];
+                
 				if ([deviceOrCalibrated isEqualToString:@"Device"]) {
 					foundColorType = OMColorTypeNSRGBADevice;
 				} else {
 					foundColorType = OMColorTypeNSRGBACalibrated;
 				}
+                
 				double red = [[text substringWithRange:[result rangeAtIndex:2]] doubleValue];
 				red = [self dividedValue:red withDivisorRange:[result rangeAtIndex:3] inString:text];
 				
@@ -424,6 +431,8 @@
 			}
 		}];
 	}
+    
+    //insert here HEX colors
 	
 	if (foundColor) {
 		if (matchedRange != NULL) {
