@@ -25,13 +25,7 @@ BOOL OMColorTypeIsNSColor(OMColorType colorType) { return colorType >= OMColorTy
 	NSRange _selectedColorRange;
 	OMColorType _selectedColorType;
 	NSTextView *_textView;
-	NSDictionary *_constantColorsByName;
-	
-	NSRegularExpression *_rgbaUIColorRegex;
-	NSRegularExpression *_rgbaNSColorRegex;
-	NSRegularExpression *_whiteNSColorRegex;
-	NSRegularExpression *_whiteUIColorRegex;
-	NSRegularExpression *_constantColorRegex;
+    
 }
 
 @property (nonatomic, strong) OMPlainColorWell *colorWell;
@@ -43,8 +37,5 @@ BOOL OMColorTypeIsNSColor(OMColorType colorType) { return colorType >= OMColorTy
 - (void)dismissColorWell;
 - (void)activateColorHighlighting;
 - (void)deactivateColorHighlighting;
-- (NSColor *)colorInText:(NSString *)text selectedRange:(NSRange)selectedRange type:(OMColorType *)type matchedRange:(NSRangePointer)matchedRange;
-- (NSString *)colorStringForColor:(NSColor *)color withType:(OMColorType)colorType;
-- (double)dividedValue:(double)value withDivisorRange:(NSRange)divisorRange inString:(NSString *)text;
 
 @end

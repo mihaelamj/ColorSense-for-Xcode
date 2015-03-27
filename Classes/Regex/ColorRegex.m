@@ -8,9 +8,6 @@
 
 #import "ColorRegex.h"
 
-//for NSColor
-#import <AppKit/AppKit.h>
-
 @interface ColorRegex ()
 
 @property (nonatomic, strong) NSRegularExpression *regex;
@@ -53,6 +50,55 @@
 }
 
 
++ (NSString *)colorStringForColor:(NSColor *)color withType:(OMColorType)colorType
+{
+    NSString *colorString = nil;
+    CGFloat red = -1.0; CGFloat green = -1.0; CGFloat blue = -1.0; CGFloat alpha = -1.0;
+    color = [color colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+    [color getRed:&red green:&green blue:&blue alpha:&alpha];
+    
+    if (red >= 0) {
+        for (NSString *colorName in [self constantColors]) {
+            NSColor *constantColor = [[self constantColors] objectForKey:colorName];
+            if ([constantColor isEqual:color]) {
+                if (OMColorTypeIsNSColor(colorType)) {
+                    colorString = [NSString stringWithFormat:@"[NSColor %@Color]", colorName];
+                } else {
+                    colorString = [NSString stringWithFormat:@"[UIColor %@Color]", colorName];
+                }
+                break;
+            }
+        }
+        
+        if (!colorString) {
+            if (fabs(red - green) < 0.001 && fabs(green - blue) < 0.001) {
+                if (colorType == OMColorTypeUIRGBA || colorType == OMColorTypeUIWhite || colorType == OMColorTypeUIConstant) {
+                    colorString = [NSString stringWithFormat:@"[UIColor colorWithWhite:%.3f alpha:%.3f]", red, alpha];
+                } else if (colorType == OMColorTypeUIRGBAInit || colorType == OMColorTypeUIWhiteInit) {
+                    colorString = [NSString stringWithFormat:@"[[UIColor alloc] initWithWhite:%.3f alpha:%.3f]", red, alpha];
+                }
+                else if (colorType == OMColorTypeNSConstant || colorType == OMColorTypeNSRGBACalibrated || colorType == OMColorTypeNSWhiteCalibrated) {
+                    colorString = [NSString stringWithFormat:@"[NSColor colorWithCalibratedWhite:%.3f alpha:%.3f]", red, alpha];
+                } else if (colorType == OMColorTypeNSRGBADevice || colorType == OMColorTypeNSWhiteDevice) {
+                    colorString = [NSString stringWithFormat:@"[NSColor colorWithDeviceWhite:%.3f alpha:%.3f]", red, alpha];
+                }
+            } else {
+                if (colorType == OMColorTypeUIRGBA || colorType == OMColorTypeUIWhite || colorType == OMColorTypeUIConstant) {
+                    colorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", red, green, blue, alpha];
+                } else if (colorType == OMColorTypeUIRGBAInit || colorType == OMColorTypeUIWhiteInit) {
+                    colorString = [NSString stringWithFormat:@"[[UIColor alloc] initWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", red, green, blue, alpha];
+                }
+                else if (colorType == OMColorTypeNSConstant || colorType == OMColorTypeNSRGBACalibrated || colorType == OMColorTypeNSWhiteCalibrated) {
+                    colorString = [NSString stringWithFormat:@"[NSColor colorWithCalibratedRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", red, green, blue, alpha];
+                } else if (colorType == OMColorTypeNSRGBADevice || colorType == OMColorTypeNSWhiteDevice) {
+                    colorString = [NSString stringWithFormat:@"[NSColor colorWithDeviceRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", red, green, blue, alpha];
+                }
+            }
+        }
+    }
+    return colorString;
+}
+
 #pragma mark -
 #pragma mark Private Methods
 
@@ -68,6 +114,8 @@
         
         if (selectedRange.location >= colorRange.location && NSMaxRange(selectedRange) <= NSMaxRange(colorRange)) {
             
+            foundColorRange = colorRange;
+            
             switch (self.colorType) {
                     
                 case OMColorTypeUIRGBA:
@@ -82,7 +130,6 @@
                     } else {
                         foundColor = [NSColor colorWithCalibratedRed:red green:green blue:blue alpha:alpha];
                     }
-                    foundColorRange = colorRange;
                 }
                     break;
                     
@@ -98,13 +145,22 @@
                     } else {
                         foundColor = [NSColor colorWithCalibratedWhite:white alpha:alpha];
                     }
-                    foundColorRange = colorRange;
                 }
                     break;
                     
                 case OMColorTypeUIConstant:
                 case OMColorTypeNSConstant: {
                     //implement
+                    
+                    NSString *NS_UI = [text substringWithRange:[result rangeAtIndex:1]];
+                    NSString *colorName = [text substringWithRange:[result rangeAtIndex:2]];
+                    foundColor = [[ColorRegex constantColors] objectForKey:colorName];
+                    
+                    if ([NS_UI isEqualToString:@"UI"]) {
+                        foundColorType = OMColorTypeUIConstant;
+                    } else {
+                        foundColorType = OMColorTypeNSConstant;
+                    }
                 }
                     
                 default:
@@ -127,6 +183,8 @@
     
     return nil;
 }
+
+#pragma mark - Color Components
 
 - (void)fetchColorType:(OMColorType *)colorType red:(CGFloat *)red green:(CGFloat *)green blue:(CGFloat *)blue alpha:(CGFloat *)alpha text:(NSString *)text result:(NSTextCheckingResult *)result
 {
@@ -157,6 +215,8 @@
     *alpha = [[text substringWithRange:[result rangeAtIndex:4]] doubleValue];
     *alpha = [ColorRegex dividedValue:*alpha withDivisorRange:[result rangeAtIndex:5] inString:text];
 }
+
+#pragma mark - Helpers
 
 - (OMColorType)colorTypeForText:(NSString *)text
 {
@@ -238,7 +298,28 @@
 }
 
 #pragma mark -
-#pragma mark Private Properties
+#pragma mark Properties
+
++ (NSDictionary *)constantColors
+{
+    return 	@{[[NSColor blackColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] : @"black",
+              [NSColor darkGrayColor] : @"darkGray",
+              [NSColor lightGrayColor] : @"lightGray",
+              [[NSColor whiteColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] : @"white",
+              [NSColor grayColor] : @"gray",
+              [NSColor redColor] : @"red",
+              [NSColor greenColor] : @"green",
+              [NSColor blueColor] : @"blue",
+              [NSColor cyanColor] : @"cyan",
+              [NSColor yellowColor] : @"yellow",
+              [NSColor magentaColor] : @"magenta",
+              [NSColor orangeColor] : @"orange",
+              [NSColor purpleColor] : @"purple",
+              [NSColor brownColor] : @"brown",
+              [[NSColor clearColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] : @"clear"};
+}
+
+#pragma mark Private
 
 + (NSArray *)regexArray
 {
